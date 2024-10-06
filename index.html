@@ -53,6 +53,10 @@
       let isGameOver = false;
       let isGameStarted = false;
 
+      // Score variable
+      let score = 0;
+      let scoreInterval;
+
       // Button coordinates (for detecting clicks)
       let buttonX = canvas.width / 2 - 100;
       let buttonY = canvas.height / 2 - 30;
@@ -131,11 +135,13 @@
       // Game Over
       function gameOver() {
         isGameOver = true;
+        clearInterval(scoreInterval); // Stop score increment
         ctx.fillStyle = "rgba(0, 0, 0, 0.8)";
         ctx.fillRect(0, 0, canvas.width, canvas.height);
         ctx.fillStyle = "white";
-        ctx.font = "bold 40px Arial"; // Bold 40px Arial for "Game Over"
+        ctx.font = "bold 40px Arial";
         ctx.fillText("Game Over!", canvas.width / 2 - 100, canvas.height / 2 - 50);
+        ctx.fillText("Score: " + score, canvas.width / 2 - 70, canvas.height / 2);
 
         ctx.font = "bold 20px Arial";
         drawButton("Play Again");
@@ -159,6 +165,11 @@
           ctx.fillRect(obstacle.x, obstacle.y, obstacle.width, obstacle.height);
         });
 
+        // Draw score
+        ctx.fillStyle = "white";
+        ctx.font = "bold 20px Arial";
+        ctx.fillText("Score: " + score, 20, 40);
+
         // Move the player and obstacles
         movePlayer();
         moveObstacles();
@@ -178,10 +189,16 @@
         // Reset game state
         isGameStarted = true;
         isGameOver = false;
+        score = 0; // Reset score
         player.x = canvas.width / 2;
         player.y = canvas.height / 2;
         player.dx = 2;
         player.dy = 0;
+
+        // Start the score increment every second
+        scoreInterval = setInterval(() => {
+          score++;
+        }, 1000);
 
         // Reset obstacles
         obstacles = [];
