@@ -1,0 +1,237 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Moving Object Game</title>
+    <style>
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+      html,
+      body {
+        height: 100%;
+        overflow: hidden; /* Prevent scrollbars */
+      }
+      canvas {
+        background-color: black;
+        display: block;
+        width: 100vw; /* Full viewport width */
+        height: 100vh; /* Full viewport height */
+      }
+    </style>
+  </head>
+  <body>
+    <!-- Canvas for the game -->
+    <canvas id="gameCanvas"></canvas>
+
+    <script>
+      const canvas = document.getElementById("gameCanvas");
+      const ctx = canvas.getContext("2d");
+
+      // Set canvas size to full window
+      canvas.width = window.innerWidth;
+      canvas.height = window.innerHeight;
+
+      // Main object (player) as a circle
+      let player = {
+        x: canvas.width / 2,
+        y: canvas.height / 2,
+        radius: 20,
+        dx: 2, // Change in x (direction right)
+        dy: 0, // Change in y (stationary vertically)
+        speed: 2,
+      };
+
+      // Obstacles array (multiple moving objects)
+      let obstacles = [];
+      const numObstacles = 15;
+
+      // Game status
+      let isGameOver = false;
+      let isGameStarted = false;
+
+      // Button coordinates (for detecting clicks)
+      let buttonX = canvas.width / 2 - 100;
+      let buttonY = canvas.height / 2 - 30;
+      let buttonWidth = 200;
+      let buttonHeight = 60;
+
+      // Handle keyboard input to change direction
+      document.addEventListener("keydown", changeDirection);
+
+      function changeDirection(event) {
+        if (isGameOver || !isGameStarted) return;
+
+        const key = event.key;
+        if (key === "ArrowUp" && player.dy === 0) {
+          player.dx = 0;
+          player.dy = -player.speed;
+        } else if (key === "ArrowDown" && player.dy === 0) {
+          player.dx = 0;
+          player.dy = player.speed;
+        } else if (key === "ArrowLeft" && player.dx === 0) {
+          player.dx = -player.speed;
+          player.dy = 0;
+        } else if (key === "ArrowRight" && player.dx === 0) {
+          player.dx = player.speed;
+          player.dy = 0;
+        }
+      }
+
+      // Move player
+      function movePlayer() {
+        player.x += player.dx;
+        player.y += player.dy;
+
+        // Boundary check (wrap around)
+        if (player.x < -player.radius) player.x = canvas.width + player.radius;
+        if (player.x > canvas.width + player.radius)
+          player.x = -player.radius;
+        if (player.y < -player.radius) player.y = canvas.height + player.radius;
+        if (player.y > canvas.height + player.radius)
+          player.y = -player.radius;
+      }
+
+      // Move obstacles
+      function moveObstacles() {
+        obstacles.forEach((obstacle) => {
+          obstacle.x += obstacle.dx;
+          obstacle.y += obstacle.dy;
+
+          // Check for boundary collision and bounce
+          if (obstacle.x < 0 || obstacle.x + obstacle.width > canvas.width) {
+            obstacle.dx *= -1; // Reverse direction horizontally
+          }
+          if (obstacle.y < 0 || obstacle.y + obstacle.height > canvas.height) {
+            obstacle.dy *= -1; // Reverse direction vertically
+          }
+        });
+      }
+
+      // Detect collision between player and obstacles
+      function checkCollision() {
+        for (let i = 0; i < obstacles.length; i++) {
+          const obs = obstacles[i];
+          if (
+            player.x - player.radius < obs.x + obs.width &&
+            player.x + player.radius > obs.x &&
+            player.y - player.radius < obs.y + obs.height &&
+            player.y + player.radius > obs.y
+          ) {
+            // Collision detected!
+            return true;
+          }
+        }
+        return false;
+      }
+
+      // Game Over
+      function gameOver() {
+        isGameOver = true;
+        ctx.fillStyle = "rgba(0, 0, 0, 0.8)";
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        ctx.fillStyle = "white";
+        ctx.font = "bold 40px Arial"; // Bold 40px Arial for "Game Over"
+        ctx.fillText("Game Over!", canvas.width / 2 - 100, canvas.height / 2 - 50);
+
+        ctx.font = "bold 20px Arial";
+        drawButton("Play Again");
+      }
+
+      // Main game loop
+      function gameLoop() {
+        if (isGameOver || !isGameStarted) return;
+
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+        // Draw player (circle)
+        ctx.fillStyle = "cyan";
+        ctx.beginPath();
+        ctx.arc(player.x, player.y, player.radius, 0, Math.PI * 2);
+        ctx.fill();
+
+        // Draw obstacles
+        obstacles.forEach((obstacle) => {
+          ctx.fillStyle = obstacle.color; // Use assigned color
+          ctx.fillRect(obstacle.x, obstacle.y, obstacle.width, obstacle.height);
+        });
+
+        // Move the player and obstacles
+        movePlayer();
+        moveObstacles();
+
+        // Check for collisions
+        if (checkCollision()) {
+          gameOver();
+          return;
+        }
+
+        // Request the next frame
+        requestAnimationFrame(gameLoop);
+      }
+
+      // Start or restart the game
+      function startGame() {
+        // Reset game state
+        isGameStarted = true;
+        isGameOver = false;
+        player.x = canvas.width / 2;
+        player.y = canvas.height / 2;
+        player.dx = 2;
+        player.dy = 0;
+
+        // Reset obstacles
+        obstacles = [];
+        const colors = ["red", "green", "yellow"]; // Available obstacle colors
+        for (let i = 0; i < numObstacles; i++) {
+          obstacles.push({
+            x: Math.random() * (canvas.width - 30),
+            y: Math.random() * (canvas.height - 30),
+            width: 30,
+            height: 30,
+            dx: Math.random() * 4 - 2, // Random speed and direction
+            dy: Math.random() * 4 - 2,
+            color: colors[Math.floor(Math.random() * colors.length)], // Random color
+          });
+        }
+
+        // Clear canvas and start game loop
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        gameLoop();
+      }
+
+      // Function to draw button on the canvas
+      function drawButton(text) {
+        ctx.fillStyle = "yellow";
+        ctx.fillRect(buttonX, buttonY, buttonWidth, buttonHeight);
+        ctx.fillStyle = "black";
+        ctx.font = "bold 30px Arial";
+        ctx.fillText(text, buttonX + 20, buttonY + 40);
+      }
+
+      // Check if the user clicks inside the button
+      canvas.addEventListener("click", function (event) {
+        const rect = canvas.getBoundingClientRect();
+        const mouseX = event.clientX - rect.left;
+        const mouseY = event.clientY - rect.top;
+
+        if (
+          mouseX > buttonX &&
+          mouseX < buttonX + buttonWidth &&
+          mouseY > buttonY &&
+          mouseY < buttonY + buttonHeight
+        ) {
+          if (!isGameStarted || isGameOver) {
+            startGame();
+          }
+        }
+      });
+
+      // Initial draw for the "Play Now" button
+      drawButton("Play Now");
+    </script>
+  </body>
+</html>
