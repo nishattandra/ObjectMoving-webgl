@@ -1,264 +1,367 @@
 <!DOCTYPE html>
 <html lang="en">
-    <head>
-        <meta charset="UTF-8" />
-        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-        <title>Moving Object Game with Scoreboard</title>
-        <style>
-      * {
-        margin: 0;
-        padding: 0;
-        box-sizing: border-box;
-      }
-      html,
-      body {
-        height: 100%;
-        overflow: hidden; /* Prevent scrollbars */
-      }
-      canvas {
-        background-color: black;
-        display: block;
-        width: 100vw; /* Full viewport width */
-        height: 100vh; /* Full viewport height */
-      }
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Moving Object Game with Smash Effect</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        html,
+        body {
+            height: 100%;
+            overflow: hidden; /* Prevent scrollbars */
+        }
+        canvas {
+            background-color: black;
+            display: block;
+            width: 100vw; /* Full viewport width */
+            height: 100vh; /* Full viewport height */
+        }
     </style>
-    </head>
-    <body>
-        <!-- Canvas for the game -->
-        <canvas id="gameCanvas"></canvas>
+</head>
+<body>
+    <canvas id="gameCanvas"></canvas>
 
-        <script>
-      const canvas = document.getElementById("gameCanvas");
-      const ctx = canvas.getContext("2d");
+    <script>
+        const canvas = document.getElementById("gameCanvas");
+        const ctx = canvas.getContext("2d");
 
-      // Set canvas size to full window
-      canvas.width = window.innerWidth;
-      canvas.height = window.innerHeight;
+        // Set canvas size to full window
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
 
-      // Main object (player) as a circle
-      let player = {
-        x: canvas.width / 2,
-        y: canvas.height / 2,
-        radius: 20,
-        dx: 2, // Change in x (direction right)
-        dy: 0, // Change in y (stationary vertically)
-        speed: 2,
-      };
+        // Main object (player) as a circle
+        let player = {
+            x: canvas.width / 2,
+            y: canvas.height / 2,
+            radius: 20,
+            dx: 2,
+            dy: 0,
+            speed: 2,
+        };
 
-      // Obstacles array (multiple moving objects)
-      let obstacles = [];
-      const numObstacles = 15;
+        // Obstacles array (multiple moving objects)
+        let obstacles = [];
+        const numObstacles = 15;
 
-      // Game status
-      let isGameOver = false;
-      let isGameStarted = false;
+        // Explosion pieces (array for fragments after crash)
+        let explosionPieces = [];
 
-      // Score variables
-      let score = 0;
-      let scoreInterval;
-      let highScore = localStorage.getItem('highScore') || 0; // Retrieve high score from local storage
+        // Game status
+        let isGameOver = false;
+        let isGameStarted = false;
 
-      // Button coordinates (for detecting clicks)
-      let buttonX = canvas.width / 2 - 100;
-      let buttonY = canvas.height / 2 - 30;
-      let buttonWidth = 200;
-      let buttonHeight = 60;
+        // Score variables
+        let score = 0;
+        let scoreInterval;
+        let highScore = Number(localStorage.getItem('highScore')) || 0;
 
-      // Handle keyboard input to change direction
-      document.addEventListener("keydown", changeDirection);
+        // Button coordinates (for detecting clicks)
+        let startButtonX = canvas.width / 2 - 100;
+        let startButtonY = canvas.height / 2 - 30;
+        let startButtonWidth = 200;
+        let startButtonHeight = 60;
 
-      function changeDirection(event) {
-        if (isGameOver || !isGameStarted) return;
+        let playAgainButtonX = canvas.width / 2 - 100;
+        let playAgainButtonY = canvas.height / 2 + 20;
+        let playAgainButtonWidth = 200;
+        let playAgainButtonHeight = 60;
 
-        const key = event.key;
-        if (key === "ArrowUp" && player.dy === 0) {
-          player.dx = 0;
-          player.dy = -player.speed;
-        } else if (key === "ArrowDown" && player.dy === 0) {
-          player.dx = 0;
-          player.dy = player.speed;
-        } else if (key === "ArrowLeft" && player.dx === 0) {
-          player.dx = -player.speed;
-          player.dy = 0;
-        } else if (key === "ArrowRight" && player.dx === 0) {
-          player.dx = player.speed;
-          player.dy = 0;
+        // Handle keyboard input to change direction
+        document.addEventListener("keydown", changeDirection);
+
+        function changeDirection(event) {
+            if (isGameOver || !isGameStarted) return;
+
+            const key = event.key;
+            if (key === "ArrowUp" && player.dy === 0) {
+                player.dx = 0;
+                player.dy = -player.speed;
+            } else if (key === "ArrowDown" && player.dy === 0) {
+                player.dx = 0;
+                player.dy = player.speed;
+            } else if (key === "ArrowLeft" && player.dx === 0) {
+                player.dx = -player.speed;
+                player.dy = 0;
+            } else if (key === "ArrowRight" && player.dx === 0) {
+                player.dx = player.speed;
+                player.dy = 0;
+            }
         }
-      }
 
-      // Move player
-      function movePlayer() {
-        player.x += player.dx;
-        player.y += player.dy;
+        // Move player
+        function movePlayer() {
+            player.x += player.dx;
+            player.y += player.dy;
 
-        // Boundary check (wrap around)
-        if (player.x < -player.radius) player.x = canvas.width + player.radius;
-        if (player.x > canvas.width + player.radius)
-          player.x = -player.radius;
-        if (player.y < -player.radius) player.y = canvas.height + player.radius;
-        if (player.y > canvas.height + player.radius)
-          player.y = -player.radius;
-      }
+            // Boundary check (wrap around)
+            if (player.x < -player.radius) player.x = canvas.width + player.radius;
+            if (player.x > canvas.width + player.radius) player.x = -player.radius;
+            if (player.y < -player.radius) player.y = canvas.height + player.radius;
+            if (player.y > canvas.height + player.radius) player.y = -player.radius;
+        }
 
-      // Move obstacles
-      function moveObstacles() {
-        obstacles.forEach((obstacle) => {
-          obstacle.x += obstacle.dx;
-          obstacle.y += obstacle.dy;
+        // Move obstacles
+        function moveObstacles() {
+            obstacles.forEach((obstacle) => {
+                obstacle.x += obstacle.dx;
+                obstacle.y += obstacle.dy;
 
-          // Check for boundary collision and bounce
-          if (obstacle.x < 0 || obstacle.x + obstacle.width > canvas.width) {
-            obstacle.dx *= -1; // Reverse direction horizontally
-          }
-          if (obstacle.y < 0 || obstacle.y + obstacle.height > canvas.height) {
-            obstacle.dy *= -1; // Reverse direction vertically
-          }
+                // Check for boundary collision and bounce
+                if (obstacle.x < 0 || obstacle.x + obstacle.width > canvas.width) {
+                    obstacle.dx *= -1;
+                }
+                if (obstacle.y < 0 || obstacle.y + obstacle.height > canvas.height) {
+                    obstacle.dy *= -1;
+                }
+            });
+        }
+
+        // Detect collision between player and obstacles
+        function checkCollision() {
+            for (let i = 0; i < obstacles.length; i++) {
+                const obs = obstacles[i];
+                if (
+                    player.x - player.radius < obs.x + obs.width &&
+                    player.x + player.radius > obs.x &&
+                    player.y - player.radius < obs.y + obs.height &&
+                    player.y + player.radius > obs.y
+                ) {
+                    // Create explosion pieces when player crashes
+                    createExplosionPieces(player.x, player.y);
+                    player = null; // Destroy player
+                    return true;
+                }
+            }
+            return false;
+        }
+
+        // Create explosion pieces at the point of collision
+        function createExplosionPieces(x, y) {
+            const numPieces = 20;
+            for (let i = 0; i < numPieces; i++) {
+                explosionPieces.push({
+                    x: x,
+                    y: y,
+                    dx: (Math.random() - 0.5) * 6, // Random velocity
+                    dy: (Math.random() - 0.5) * 6,
+                    size: Math.random() * 5 + 5, // Random size
+                    lifespan: 50 + Math.random() * 50, // Random lifespan
+                });
+            }
+        }
+
+        // Update explosion pieces (move and reduce lifespan)
+        function updateExplosionPieces() {
+            for (let i = explosionPieces.length - 1; i >= 0; i--) {
+                const piece = explosionPieces[i];
+                piece.x += piece.dx;
+                piece.y += piece.dy;
+                piece.lifespan -= 1;
+
+                // Remove pieces that have faded out
+                if (piece.lifespan <= 0) {
+                    explosionPieces.splice(i, 1);
+                }
+            }
+        }
+
+        // Game Over
+        function gameOver() {
+            isGameOver = true;
+            clearInterval(scoreInterval);
+            console.log("Game Over! Current Score:", score);
+
+            if (score > highScore) {
+                highScore = score;
+                localStorage.setItem("highScore", highScore);
+            }
+
+            ctx.fillStyle = "rgba(0, 0, 0, 0.8)";
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            // Display "Game Over" message
+            ctx.fillStyle = "white";
+            ctx.font = "bold 40px Arial";
+            ctx.fillText("Game Over!", canvas.width / 2 - 100, canvas.height / 2 - 80);
+
+            // Display final score
+            ctx.font = "bold 24px Arial";
+            ctx.fillText("Your Score: " + score, canvas.width / 2 - 68, canvas.height / 2 - 50);
+
+            // Display high score
+            ctx.font = "bold 20px Arial";
+            ctx.fillText("Highest Score: " + highScore, canvas.width / 2 - 70, canvas.height / 2 - 20);
+
+            drawPlayAgainButton();
+        }
+
+        // Main game loop
+        function gameLoop() {
+            if (isGameOver || !isGameStarted) return;
+
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            // Draw player (if still exists)
+            if (player) {
+                ctx.fillStyle = "cyan";
+                ctx.beginPath();
+                ctx.arc(player.x, player.y, player.radius, 0, Math.PI * 2);
+                ctx.fill();
+            }
+
+            // Draw obstacles
+            obstacles.forEach((obstacle) => {
+                ctx.fillStyle = obstacle.color;
+                ctx.fillRect(obstacle.x, obstacle.y, obstacle.width, obstacle.height);
+            });
+
+            // Draw explosion pieces
+            explosionPieces.forEach((piece) => {
+                ctx.fillStyle = "orange";
+                ctx.beginPath();
+                ctx.arc(piece.x, piece.y, piece.size, 0, Math.PI * 2);
+                ctx.fill();
+            });
+
+            // Update the player and obstacles
+            movePlayer();
+            moveObstacles();
+            updateExplosionPieces();
+
+            // Check for collisions
+            if (checkCollision()) {
+                gameOver();
+                return;
+            }
+
+            // Draw score and high score
+            ctx.fillStyle = "white";
+            ctx.font = "bold 20px Arial";
+            ctx.fillText("Score: " + score, 20, 40);
+            ctx.fillText("High Score: " + highScore, 20, 70);
+
+            // Request the next frame
+            requestAnimationFrame(gameLoop);
+        }
+
+        // Start or restart the game
+        function startGame() {
+            // Reset game state
+            isGameStarted = true;
+            isGameOver = false;
+            score = 0;
+            player = {
+                x: canvas.width / 2,
+                y: canvas.height / 2,
+                radius: 20,
+                dx: 2,
+                dy: 0,
+                speed: 2,
+            };
+            explosionPieces = [];
+
+            // Create random obstacles
+            obstacles = [];
+            for (let i = 0; i < numObstacles; i++) {
+                const width = Math.random() * 50 + 30;
+                const height = Math.random() * 50 + 30;
+                const x = Math.random() * (canvas.width - width);
+                const y = Math.random() * (canvas.height - height);
+                const dx = (Math.random() - 0.5) * 4;
+                const dy = (Math.random() - 0.5) * 4;
+                const colors = ["green", "red", "yellow", "white", "purple", "magenta", "gray"];
+                const color = colors[Math.floor(Math.random() * colors.length)];
+                obstacles.push({ x, y, width, height, dx, dy, color });
+            }
+
+            // Start scoring
+            scoreInterval = setInterval(() => {
+                score++;
+            }, 1000);
+
+            // Start the game loop
+            gameLoop();
+        }
+
+        // Initial display (Start Game button)
+        function displayStartScreen() {
+            ctx.fillStyle = "rgba(0, 0, 0, 0.8)";
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            ctx.fillStyle = "white";
+            ctx.font = "bold 40px Arial";
+            ctx.fillText("Moving Object Game", canvas.width / 2 - 200, canvas.height / 2 - 80);
+
+            drawStartButton();
+        }
+
+        // Draw Start button
+        function drawStartButton() {
+            ctx.fillStyle = "green";
+            ctx.fillRect(startButtonX, startButtonY, startButtonWidth, startButtonHeight);
+
+            ctx.fillStyle = "white";
+            ctx.font = "bold 24px Arial";
+            ctx.fillText("Start Game", startButtonX + 40, startButtonY + 40);
+        }
+
+        // Draw Play Again button
+        function drawPlayAgainButton() {
+            ctx.fillStyle = "blue";
+            ctx.fillRect(playAgainButtonX, playAgainButtonY, playAgainButtonWidth, playAgainButtonHeight);
+
+            ctx.fillStyle = "white";
+            ctx.font = "bold 24px Arial";
+            ctx.fillText("Play Again", playAgainButtonX + 40, playAgainButtonY + 40);
+        }
+
+        // Handle mouse clicks on buttons
+        canvas.addEventListener("click", function (event) {
+            const mouseX = event.clientX;
+            const mouseY = event.clientY;
+
+            if (!isGameStarted) {
+                // Check if Start button is clicked
+                if (
+                    mouseX >= startButtonX &&
+                    mouseX <= startButtonX + startButtonWidth &&
+                    mouseY >= startButtonY &&
+                    mouseY <= startButtonY + startButtonHeight
+                ) {
+                    startGame();
+                }
+            }
+
+            if (isGameOver) {
+                // Check if Play Again button is clicked
+                if (
+                    mouseX >= playAgainButtonX &&
+                    mouseX <= playAgainButtonX + playAgainButtonWidth &&
+                    mouseY >= playAgainButtonY &&
+                    mouseY <= playAgainButtonY + playAgainButtonHeight
+                ) {
+                    startGame();
+                }
+            }
         });
-      }
 
-      // Detect collision between player and obstacles
-      function checkCollision() {
-        for (let i = 0; i < obstacles.length; i++) {
-          const obs = obstacles[i];
-          if (
-            player.x - player.radius < obs.x + obs.width &&
-            player.x + player.radius > obs.x &&
-            player.y - player.radius < obs.y + obs.height &&
-            player.y + player.radius > obs.y
-          ) {
-            // Collision detected!
-            return true;
-          }
-        }
-        return false;
-      }
+        // Display the start screen when the page loads
+        displayStartScreen();
 
-      // Game Over
-function gameOver() {
-  isGameOver = true;
-  ctx.fillStyle = "rgba(0, 0, 0, 0.8)";
-  ctx.fillRect(0, 0, canvas.width, canvas.height);
-  
-  // Display "Game Over" message
-  ctx.fillStyle = "white";
-  ctx.font = "bold 40px Arial";
-  ctx.fillText("Game Over!", canvas.width / 2 - 100, canvas.height / 2 - 120); // Adjusted Y position
-
-  // Display final score
-  ctx.font = "bold 24px Arial";
-  ctx.fillText("Your Score: " + score, canvas.width / 2 - 68, canvas.height / 2 - 80); // Adjusted Y position
-
-  // Display high score
-  ctx.font = "bold 20px Arial";
-  ctx.fillText("Highest Score: " + highScore, canvas.width / 2 - 70, canvas.height / 2 - 55); // Adjusted Y position
-  
-  // Draw the "Play Again" button
-  drawButton("Play Again");
-}
-
-      // Main game loop
-      function gameLoop() {
-        if (isGameOver || !isGameStarted) return;
-
-        ctx.clearRect(0, 0, canvas.width, canvas.height);
-
-        // Draw player (circle)
-        ctx.fillStyle = "cyan";
-        ctx.beginPath();
-        ctx.arc(player.x, player.y, player.radius, 0, Math.PI * 2);
-        ctx.fill();
-
-        // Draw obstacles
-        obstacles.forEach((obstacle) => {
-          ctx.fillStyle = obstacle.color; // Use assigned color
-          ctx.fillRect(obstacle.x, obstacle.y, obstacle.width, obstacle.height);
+        // Adjust canvas size when window is resized
+        window.addEventListener("resize", () => {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+            startButtonX = canvas.width / 2 - 100;
+            startButtonY = canvas.height / 2 - 30;
+            playAgainButtonX = canvas.width / 2 - 100;
+            playAgainButtonY = canvas.height / 2 + 20;
         });
-
-        // Draw score and high score
-        ctx.fillStyle = "white";
-        ctx.font = "bold 20px Arial";
-        ctx.fillText("Score: " + score, 20, 40);
-        ctx.fillText("High Score: " + highScore, 20, 70);
-
-        // Move the player and obstacles
-        movePlayer();
-        moveObstacles();
-
-        // Check for collisions
-        if (checkCollision()) {
-          gameOver();
-          return;
-        }
-
-        // Request the next frame
-        requestAnimationFrame(gameLoop);
-      }
-
-      // Start or restart the game
-      function startGame() {
-        // Reset game state
-        isGameStarted = true;
-        isGameOver = false;
-        score = 0; // Reset score
-        player.x = canvas.width / 2;
-        player.y = canvas.height / 2;
-        player.dx = 2;
-        player.dy = 0;
-
-        // Start the score increment every second
-        scoreInterval = setInterval(() => {
-          score++;
-        }, 1000);
-
-        // Reset obstacles
-        obstacles = [];
-        const colors = ["red", "green", "yellow"]; // Available obstacle colors
-        for (let i = 0; i < numObstacles; i++) {
-          obstacles.push({
-            x: Math.random() * (canvas.width - 30),
-            y: Math.random() * (canvas.height - 30),
-            width: 30,
-            height: 30,
-            dx: Math.random() * 4 - 2, // Random speed and direction
-            dy: Math.random() * 4 - 2,
-            color: colors[Math.floor(Math.random() * colors.length)], // Random color
-          });
-        }
-
-        // Clear canvas and start game loop
-        ctx.clearRect(0, 0, canvas.width, canvas.height);
-        gameLoop();
-      }
-
-      // Function to draw button on the canvas
-      function drawButton(text) {
-        ctx.fillStyle = "yellow";
-        ctx.fillRect(buttonX, buttonY, buttonWidth, buttonHeight);
-        ctx.fillStyle = "black";
-        ctx.font = "bold 30px Arial";
-        ctx.fillText(text, buttonX + 20, buttonY + 40);
-      }
-
-      // Check if the user clicks inside the button
-      canvas.addEventListener("click", function (event) {
-        const rect = canvas.getBoundingClientRect();
-        const mouseX = event.clientX - rect.left;
-        const mouseY = event.clientY - rect.top;
-
-        if (
-          mouseX > buttonX &&
-          mouseX < buttonX + buttonWidth &&
-          mouseY > buttonY &&
-          mouseY < buttonY + buttonHeight
-        ) {
-          if (!isGameStarted || isGameOver) {
-            startGame();
-          }
-        }
-      });
-
-      // Initial draw for the "Play Now" button
-      drawButton("Play Now");
     </script>
-    </body>
+</body>
 </html>
