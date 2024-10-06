@@ -1,6 +1,9 @@
-# Moving Object Game with Snippiness Effect
+# Moving Object Game with Snippiness Effect 
 
 A fun, interactive browser game where the player controls a moving object that must avoid randomly moving obstacles. Upon crashing into an obstacle, the main object breaks into smaller fragments (snippiness effect) before the game ends.
+
+## Live Demo
+You can play the game here: [Live Game](https://nishattandra.github.io/ObjectMoving-webgl/)
 
 ## Features
 
